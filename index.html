@@ -1,0 +1,131 @@
+<!-- Import 8th Wall version of A-Frame -->
+<script src="//cdn.8thwall.com/web/aframe/8frame-0.9.0.min.js"></script>
+<script src="//cdn.8thwall.com/web/aframe/aframe-animation-component-5.1.2.min.js"></script>
+<script src="//cdn.8thwall.com/web/aframe/aframe-extras-4.2.0.min.js"></script>
+
+<!-- Import 8th Wall XR Extras which provides utilities like load screen, almost there, and error handling -->
+<script src="//cdn.8thwall.com/web/xrextras/xrextras.js"></script>
+
+<!-- Import the web app key here -->
+<script src="//apps.8thwall.com/xrweb?appKey=VHO7LtMmTX1s0Zp4qJOABueLbDGJY2AhwEpJwVfFk0RNFbDTfwvtBjXcgAFJo6o0gCQCG"></script>
+
+<!-- Created my own version of the component called "extended-tracking" that tracks the marker and enables
+     SLAM Tracking when the marker is not in sight anymore -->
+<script>
+  AFRAME.registerComponent('extended-tracking', {
+    schema: {
+      name: { type: 'string' },
+    },
+    init: function () {
+      const object3D = this.el.object3D
+      const name = this.data.name
+      object3D.visible = false
+      const showImage = ({detail}) => {
+        if (name != detail.name) {
+          return
+        }
+        object3D.position.copy(detail.position)
+        object3D.quaternion.copy(detail.rotation)
+        object3D.scale.set(detail.scale, detail.scale, detail.scale)
+        object3D.visible = true
+      }
+      this.el.sceneEl.addEventListener('xrimagefound', showImage)
+      this.el.sceneEl.addEventListener('xrimageupdated', showImage)
+    }
+  })
+</script>    
+
+<!-- Created a custom component called "dynamic" that can dynamically change the value of a text -->
+<script>
+  AFRAME.registerComponent('dynamic', {
+    // This is a "tick" handler, so it is called 90 times per second
+    tick: function() {
+      // Get the entity where the component is called from
+      var el = this.el;
+      // Get the current String number from "value"
+      var val = el.getAttribute('value');
+      // Parse the String number into a Float number
+      var valFloat = parseFloat(val);
+      // Add 0.1789046729405986 to the current Float number
+      var plus = valFloat + 0.1789046729405986;
+      // Change the new Float number back to a String number
+      var stringPlus = plus.toString();
+      // Change the "value" to the new String number
+      el.setAttribute('value', stringPlus);
+    }
+  });
+</script>
+
+<a-scene
+  xrweb
+  xrextras-gesture-detector
+  xrextras-almost-there
+  xrextras-loading
+  xrextras-runtime-error>
+
+  <!-- Load all of the models and animations needed in the scene -->
+  <a-assets>
+
+    <!-- Load the .glb file for the Sand Castle Model by specifying the path -->
+    <!-- Label the .glb file "sandCastleModel" -->
+    <a-asset-item id="sandCastleModel" src="https://raw.githubusercontent.com/placeholders2019/models/master/sand-castle.glb"></a-asset-item>
+
+    <!-- Load the .glb file for the Bird Animation by specifying the path -->
+    <!-- Label the .glb file "Bird" -->
+    <a-asset-item id="Bird" response-type="arraybuffer" src="https://raw.githubusercontent.com/placeholders2019/models/master/Bird.glb"></a-asset-item>
+
+    <!-- Load the .obj and .mtl file for the Fox Model by specifying the path of each -->
+    <!-- Label the .obj file "Fox_obj" and label the .mtl file "Fox_mtl" -->
+    <a-asset-item id="Fox_obj" src="https://raw.githubusercontent.com/placeholders2019/models/master/Fox.obj"></a-asset-item>
+    <a-asset-item id="Fox_mtl" src="https://raw.githubusercontent.com/placeholders2019/models/master/Fox.mtl"></a-asset-item>
+
+    <!-- Load the .obj and .mtl file for the SafeGuard Boundary Model by specifying the path of each -->
+    <!-- Label the .obj file "Fence_obj" and label the .mtl file "Fence_mtl" -->
+    <a-asset-item id="Fence_obj" src="https://raw.githubusercontent.com/placeholders2019/models/master/Fence.obj"></a-asset-item>
+    <a-asset-item id="Fence_mtl" src="https://raw.githubusercontent.com/placeholders2019/models/master/Fence.mtl"></a-asset-item>
+
+  </a-assets>
+
+  <!-- Create a Camera Entity -->
+  <!-- Displays the Competitor's Name at the top and a Dynamically Changing Number at the bottom -->
+  <a-camera
+    position="0 4 10"
+    raycaster="objects: .cantap"
+    cursor="fuse: false; rayOrigin: mouse;">
+    <a-text value="Competitor's Name" position="1 1 -3" rotation="0 0 -90" color="black"></a-text>
+    <a-text dynamic value="0" position="-1 1.05 -3" rotation="0 0 -90"></a-text>
+  </a-camera>
+
+  <!-- Create Light Entities -->
+  <a-light type="directional" intensity="0.5" position="1 1 1"></a-light>
+  <a-light type="ambient" intensity="1"></a-light> 
+    
+  <!-- Call my Custom Component "extended-tracking" to track the marker I imported
+       into the 8th Wall Console named "NASA" and enable SLAM Tracking when the
+       marker is not in sight anymore -->
+  <a-entity extended-tracking="name: NASA">
+
+    <!-- Position the Sand Castle Model to the right and behind the marker -->
+    <!-- Rotate the Sand Castle and scale it down -->
+    <a-entity gltf-model="#sandCastleModel" position="0 7.5 -33" rotation="0 0 90" scale="0.01 0.01 0.01"></a-entity>
+
+    <!-- Position the Bird Animation to the left, behind, and high above the marker -->
+    <!-- Rotate the Bird and scale it down -->
+    <a-entity gltf-model="#Bird" position="-7.5 -4 -25" rotation="0 0 90" scale="0.0025 0.0025 0.0025" animation-mixer></a-entity>
+
+    <!-- Position the Fox Model behind and above the marker and scale it down -->
+    <a-entity rotation="0 180 -90" position="-4 0 -15" scale="0.5 0.5 0.5">
+        <a-obj-model src="#Fox_obj" mtl="#Fox_mtl"></a-obj-model>
+    </a-entity>
+
+    <!-- Position the Blue Box Model on the marker and scale it down -->
+    <a-box scale="0.75 0.75 0.75" color="blue"></a-box>
+
+    <!-- Position the SafeGuard Boundary Model behind and below the image marker -->
+    <!-- Rotate the SafeGuard Boundary and scale it down -->
+    <a-entity rotation="0 0 90" position="2 0 -25" scale="0.03 0.03 0.03">
+        <a-obj-model src="#Fence_obj" mtl="#Fence_mtl"></a-obj-model>
+    </a-entity>
+
+  </a-entity>
+</a-scene>
